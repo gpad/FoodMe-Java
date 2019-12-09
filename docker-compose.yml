@@ -1,0 +1,13 @@
+version: '3'
+
+services:
+  database:
+    image: postgres:11
+    container_name: food_me_pg
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_USER=food_me_user
+      - POSTGRES_PASSWORD=food_me_pwd
+      - POSTGRES_DB=food_me_dev
+

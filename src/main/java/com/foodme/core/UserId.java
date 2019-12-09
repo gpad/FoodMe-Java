@@ -1,7 +1,3 @@
-//
-// Translated by CS2J (http://www.cs2j.com): 05/12/2019 19:36:14
-//
-
 package com.foodme.core;
 
 import java.util.Objects;
@@ -10,12 +6,12 @@ import java.util.UUID;
 public class UserId {
     private UUID id;
 
-    public static UserId unique() {
-        return new UserId(UUID.randomUUID());
-    }
-
     private UserId(UUID id) {
         this.id = id;
+    }
+
+    public static UserId unique() {
+        return new UserId(UUID.randomUUID());
     }
 
     @Override
