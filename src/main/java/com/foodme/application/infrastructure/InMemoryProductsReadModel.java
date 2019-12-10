@@ -19,18 +19,17 @@ public class InMemoryProductsReadModel implements IProductsReadModel {
 
     public InMemoryProductsReadModel(IDomainEventSubscriber subscriber) throws Exception {
         this.subscriber = subscriber;
-        this.subscriber.<ProductAdded>subscribe(o -> handleProductAddedEvent(o));
+        this.subscriber.subscribe(ProductAdded.class, o -> handleProductAddedEvent(o));
     }
 
     private void handleProductAddedEvent(ProductAdded productAdded) {
         Product zeroProduct = new Product(productAdded.getProductId(), "", 0.0, 0);
         Product entry = this.mostSeenProducts.getOrDefault(productAdded.getProductId(), zeroProduct);
-        entry.add(productAdded.getQuantity());
-        this.mostSeenProducts.put(productAdded.getProductId(), entry);
+        this.mostSeenProducts.put(productAdded.getProductId(), entry.add(productAdded.getQuantity()));
     }
 
     public Collection<Product> getMostSeen() {
-        return this.mostSeenProducts.values().stream().sorted(Comparator.comparing(Product::getQuantity)).collect(Collectors.toList());
+        return this.mostSeenProducts.values().stream().sorted(Comparator.comparing(Product::getQuantity).reversed()).collect(Collectors.toList());
     }
 
 }

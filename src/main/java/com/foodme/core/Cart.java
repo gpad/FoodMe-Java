@@ -40,7 +40,7 @@ public class Cart extends Aggregate<CartId> {
         return itemId;
     }
 
-    public void When(ProductAdded productAdded) {
+    public void when(ProductAdded productAdded) {
         this.cartItems.add(
                 new CartItem(
                         productAdded.getItemId(),

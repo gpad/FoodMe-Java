@@ -18,9 +18,7 @@ public class ProductAdded extends DomainEvent<CartId> {
     public ProductId getProductId() {
         return productId;
     }
-    public int getQuantity() {
-        return quantity;
-    }
+    public int getQuantity() {        return quantity;    }
 
     public ProductAdded(CartId cartId, UUID itemId, ProductId productId, int quantity, long aggregateVersion) {
         super(cartId, aggregateVersion);

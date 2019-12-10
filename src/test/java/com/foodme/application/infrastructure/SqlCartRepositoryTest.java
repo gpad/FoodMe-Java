@@ -1,20 +1,33 @@
 package com.foodme.application.infrastructure;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.assertThat;
-
 import com.foodme.core.*;
+import org.flywaydb.core.Flyway;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertThat;
+
 public class SqlCartRepositoryTest {
+    private final String connectionString = "jdbc:postgresql://localhost:5433/food_me_dev";
     private User user;
     private DomainEventPubSub domainEventPubSub;
-    private final String connectionString = "jdbc:postgresql://localhost:5432/foodme_dev";
     private SqlCartRepository cartRepository;
     private Product shampoo = new Product(ProductId.unique(), "shampoo", 12.32);
     private Product soap = new Product(ProductId.unique(), "soap", 3.42);
+
+    @BeforeClass
+    public static void migrateDb(){
+        Flyway flyway = Flyway.configure().dataSource("jdbc:postgresql://localhost:5433/food_me_dev", "food_me_user", "food_me_pwd").load();
+        flyway.migrate();
+    }
 
     @Before
     public void setUp() throws Exception {
@@ -25,7 +38,18 @@ public class SqlCartRepositoryTest {
     }
 
     private void deleteTables(String... tables) {
-        throw new UnsupportedOperationException();
+        for (String table : tables) {
+            deleteTable(table);
+        }
+    }
+
+    private void deleteTable(String table) {
+        try (Connection conn = DriverManager.getConnection(connectionString, "food_me_user", "food_me_pwd");
+             PreparedStatement statement = conn.prepareStatement("delete from " + table)) {
+            statement.execute();
+        } catch (SQLException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     @After
@@ -34,8 +58,7 @@ public class SqlCartRepositoryTest {
     }
 
     @Test
-    public  void storeAndLoadCart()
-    {
+    public void storeAndLoadCart() throws SQLException {
         Cart cart = Cart.createEmptyFor(user);
         cart.addProduct(shampoo, 2);
         cart.addProduct(soap, 1);

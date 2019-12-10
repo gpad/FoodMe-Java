@@ -1,14 +1,19 @@
 package com.foodme.application;
 
-import com.foodme.application.Migrations.Migrator;
 import com.foodme.application.infrastructure.*;
 import com.foodme.core.*;
 import com.foodme.readmodel.IOrderReadModel;
 import com.foodme.readmodel.IProductsReadModel;
+import org.flywaydb.core.Flyway;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -16,7 +21,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
 
 public class IntegrationTests {
-    private static final String ConnectionString = "Data Source=127.0.0.1,1433;Initial Catalog=FoodMeDev;User ID=SA;Password=StrongPassword1;";
+    private static final String connectionString = "jdbc:postgresql://localhost:5433/food_me_dev";
     private User user;
     private Product shampoo = new Product(ProductId.unique(), "shampoo", 12.32);
     private Product soap = new Product(ProductId.unique(), "soap", 3.42);
@@ -26,28 +31,41 @@ public class IntegrationTests {
     private IOrderReadModel orderReadModel;
     private DomainEventPubSub domainEventPubSub;
 
-    public void dataBaseFixtureOneTimeSetUp() {
-        Migrator.migrateDb(ConnectionString);
+    @BeforeClass
+    public static void migrateDb() {
+        Flyway flyway = Flyway.configure().dataSource(connectionString, "food_me_user", "food_me_pwd").load();
+        flyway.migrate();
     }
 
     @Before
     public void setup() throws Exception {
-        deleteTables("carts", "cart_items");
+        deleteTables("carts", "cart_items", "events");
         user = new User(UserId.unique());
         domainEventPubSub = new DomainEventPubSub();
-        cartRepository = new SqlCartRepository(ConnectionString, domainEventPubSub);
-        orderRepository = new SqlOrderRepository(ConnectionString, domainEventPubSub);
+        cartRepository = new SqlCartRepository(connectionString, domainEventPubSub);
+        orderRepository = new SqlOrderRepository(connectionString, domainEventPubSub);
         productsReadModel = new InMemoryProductsReadModel(domainEventPubSub);
         orderReadModel = new InMemoryOrderReadModel();
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() throws InterruptedException {
         domainEventPubSub.close();
     }
 
-    protected void deleteTables(String... tables) {
-        throw new UnsupportedOperationException();
+    private void deleteTables(String... tables) {
+        for (String table : tables) {
+            deleteTable(table);
+        }
+    }
+
+    private void deleteTable(String table) {
+        try (Connection conn = DriverManager.getConnection(connectionString, "food_me_user", "food_me_pwd");
+             PreparedStatement statement = conn.prepareStatement("delete from " + table)) {
+            statement.execute();
+        } catch (SQLException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     private com.foodme.readmodel.Product mostSeenProduct(Product product, int quantity) {
@@ -59,22 +77,21 @@ public class IntegrationTests {
     }
 
     @Test
-    void addingProductToCartPopulateProductsReadModel() {
+    public void addingProductToCartPopulateProductsReadModel() throws SQLException, InterruptedException {
         Cart cart = Cart.createEmptyFor(user);
         cart.addProduct(shampoo, 2);
         cart.addProduct(soap, 1);
 
         cartRepository.save(cart);
 
+        Thread.sleep(100);
         assertThat(productsReadModel.getMostSeen(), equalTo(
-                Arrays.asList(
-                        mostSeenProduct(shampoo, 2),
-                        mostSeenProduct(soap, 1))
+                Arrays.asList(mostSeenProduct(shampoo, 2), mostSeenProduct(soap, 1))
         ));
     }
 
     @Test
-    public void checkOutCartPlaceOrderToProperShop(){
+    public void checkOutCartPlaceOrderToProperShop() throws SQLException {
         Cart cart = Cart.createEmptyFor(user);
         cart.addProduct(shampoo, 2);
         cart.addProduct(soap, 1);

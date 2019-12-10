@@ -1,8 +1,10 @@
 package com.foodme.core;
 
+import java.sql.SQLException;
+
 public interface ICartRepository {
-    int save(Cart cart);
-    Cart load(CartId cartId);
+    void save(Cart cart) throws SQLException;
+    Cart load(CartId cartId) throws SQLException;
 }
 
 

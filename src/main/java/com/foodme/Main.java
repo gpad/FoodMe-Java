@@ -3,6 +3,7 @@ package com.foodme;
 import com.foodme.application.Services.ICartService;
 import com.foodme.application.Services.IOrderService;
 import com.foodme.application.infrastructure.DomainEventPubSub;
+import com.foodme.application.infrastructure.SqlCartRepository;
 import com.foodme.core.Cart;
 import com.foodme.core.WarehouseUpdater;
 import org.flywaydb.core.Flyway;
@@ -22,13 +23,13 @@ public class Main {
         migrateDb();
         DomainEventPubSub domainEventPubSub = new DomainEventPubSub();
         Policies policies = startupPolicies();
-        if (args.length == 1 && args[0] == "createCart") {
+        if (args.length == 1 && args[0].equals("createCart")) {
             ICartService cartService = createCartService(connectionString, domainEventPubSub);
             Cart cart = cartService.create();
             System.out.println("Created new cart " + cart.getId());
             return;
         }
-        if (args.length == 4 && args[0] == "addProduct") {
+        if (args.length == 4 && args[0].equals("addProduct")) {
             ICartService cartService = createCartService(connectionString, domainEventPubSub);
             String cartId = args[1];
             String productId = args[2];
@@ -43,7 +44,7 @@ public class Main {
             System.out.println("Product added!!!");
             return;
         }
-        if (args.length == 2 && args[0] == "checkout") {
+        if (args.length == 2 && args[0].equals("checkout")) {
             String cartId = args[1];
             IOrderService orderService = createOrderService();
             orderService.checkout(cartId);
@@ -61,7 +62,8 @@ public class Main {
     }
 
     private static ICartService createCartService(String connectionString, DomainEventPubSub domainEventPubSub) {
-        return null;
+        SqlCartRepository cartRepository = new SqlCartRepository(connectionString, domainEventPubSub);
+        return new ConsoleCartService(cartRepository);
     }
 
     private static Policies startupPolicies() {
