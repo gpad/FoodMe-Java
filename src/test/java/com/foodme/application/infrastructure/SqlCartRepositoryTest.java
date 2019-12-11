@@ -1,5 +1,6 @@
 package com.foodme.application.infrastructure;
 
+import com.foodme.Main;
 import com.foodme.core.*;
 import org.flywaydb.core.Flyway;
 import org.junit.After;
@@ -16,16 +17,16 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
 
 public class SqlCartRepositoryTest {
-    private final String connectionString = "jdbc:postgresql://localhost:5433/food_me_dev";
     private User user;
     private DomainEventPubSub domainEventPubSub;
     private SqlCartRepository cartRepository;
     private Product shampoo = new Product(ProductId.unique(), "shampoo", 12.32);
     private Product soap = new Product(ProductId.unique(), "soap", 3.42);
+    private static ConnectionInfo connectionInfo = Main.CONNECTION_INFO;
 
     @BeforeClass
     public static void migrateDb(){
-        Flyway flyway = Flyway.configure().dataSource("jdbc:postgresql://localhost:5433/food_me_dev", "food_me_user", "food_me_pwd").load();
+        Flyway flyway = Flyway.configure().dataSource(connectionInfo.getConnectionString(), connectionInfo.getUser(), connectionInfo.getPassword()).load();
         flyway.migrate();
     }
 
@@ -34,7 +35,7 @@ public class SqlCartRepositoryTest {
         deleteTables("carts", "cart_items");
         user = new User(UserId.unique());
         domainEventPubSub = new DomainEventPubSub();
-        cartRepository = new SqlCartRepository(connectionString, domainEventPubSub);
+        cartRepository = new SqlCartRepository(connectionInfo, domainEventPubSub);
     }
 
     private void deleteTables(String... tables) {
@@ -44,7 +45,7 @@ public class SqlCartRepositoryTest {
     }
 
     private void deleteTable(String table) {
-        try (Connection conn = DriverManager.getConnection(connectionString, "food_me_user", "food_me_pwd");
+        try (Connection conn = DriverManager.getConnection(connectionInfo.getConnectionString(), connectionInfo.getUser(), connectionInfo.getPassword());
              PreparedStatement statement = conn.prepareStatement("delete from " + table)) {
             statement.execute();
         } catch (SQLException ex) {

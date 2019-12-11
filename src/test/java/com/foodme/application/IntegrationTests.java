@@ -1,5 +1,6 @@
 package com.foodme.application;
 
+import com.foodme.Main;
 import com.foodme.application.infrastructure.*;
 import com.foodme.core.*;
 import com.foodme.readmodel.IOrderReadModel;
@@ -21,7 +22,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
 
 public class IntegrationTests {
-    private static final String connectionString = "jdbc:postgresql://localhost:5433/food_me_dev";
+    private static ConnectionInfo connectionInfo = Main.CONNECTION_INFO;
     private User user;
     private Product shampoo = new Product(ProductId.unique(), "shampoo", 12.32);
     private Product soap = new Product(ProductId.unique(), "soap", 3.42);
@@ -33,7 +34,7 @@ public class IntegrationTests {
 
     @BeforeClass
     public static void migrateDb() {
-        Flyway flyway = Flyway.configure().dataSource(connectionString, "food_me_user", "food_me_pwd").load();
+        Flyway flyway = Flyway.configure().dataSource(connectionInfo.getConnectionString(), connectionInfo.getUser(), connectionInfo.getPassword()).load();
         flyway.migrate();
     }
 
@@ -42,8 +43,8 @@ public class IntegrationTests {
         deleteTables("carts", "cart_items", "events");
         user = new User(UserId.unique());
         domainEventPubSub = new DomainEventPubSub();
-        cartRepository = new SqlCartRepository(connectionString, domainEventPubSub);
-        orderRepository = new SqlOrderRepository(connectionString, domainEventPubSub);
+        cartRepository = new SqlCartRepository(Main.CONNECTION_INFO, domainEventPubSub);
+        orderRepository = new SqlOrderRepository(connectionInfo, domainEventPubSub);
         productsReadModel = new InMemoryProductsReadModel(domainEventPubSub);
         orderReadModel = new InMemoryOrderReadModel();
     }
@@ -60,7 +61,7 @@ public class IntegrationTests {
     }
 
     private void deleteTable(String table) {
-        try (Connection conn = DriverManager.getConnection(connectionString, "food_me_user", "food_me_pwd");
+        try (Connection conn = DriverManager.getConnection(connectionInfo.getConnectionString(), connectionInfo.getUser(), connectionInfo.getPassword());
              PreparedStatement statement = conn.prepareStatement("delete from " + table)) {
             statement.execute();
         } catch (SQLException ex) {
@@ -101,11 +102,7 @@ public class IntegrationTests {
         orderRepository.save(order);
 
         Collection<com.foodme.readmodel.Order> orders = orderReadModel.getAllFor(cart.getShopId());
-        assertThat(orders, equalTo(
-                Arrays.asList(
-                        readModelOrderFrom(order)
-                )
-        ));
+        assertThat(orders, equalTo(Arrays.asList(readModelOrderFrom(order))));
     }
 
 }

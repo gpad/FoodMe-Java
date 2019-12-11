@@ -1,10 +1,5 @@
 package com.foodme.application.infrastructure;
 
-
-/*
-http://www.postgresqltutorial.com/postgresql-jdbc/insert/
- */
-
 import com.foodme.application.Serialization;
 import com.foodme.core.*;
 
@@ -15,11 +10,11 @@ import java.util.List;
 import java.util.UUID;
 
 public class SqlCartRepository implements ICartRepository {
-    private final String connectionString = "jdbc:postgresql://localhost:5433/food_me_dev";
     private final IDomainEventPublisher eventPublisher;
+    private ConnectionInfo connectionInfo;
 
-    public SqlCartRepository(String connectionString, IDomainEventPublisher eventPublisher) {
-//        this.connectionString = connectionString;
+    public SqlCartRepository(ConnectionInfo connectionInfo, IDomainEventPublisher eventPublisher) {
+        this.connectionInfo = connectionInfo;
         this.eventPublisher = eventPublisher;
     }
 
@@ -116,6 +111,7 @@ public class SqlCartRepository implements ICartRepository {
     }
 
     private Connection connect() throws SQLException {
-        return DriverManager.getConnection(connectionString, "food_me_user", "food_me_pwd");
+
+        return DriverManager.getConnection(connectionInfo.getConnectionString(), connectionInfo.getUser(), connectionInfo.getPassword());
     }
 }
