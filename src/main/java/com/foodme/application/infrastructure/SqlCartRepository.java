@@ -20,8 +20,8 @@ public class SqlCartRepository implements ICartRepository {
 
     @Override
     public void save(Cart cart) throws SQLException {
-        String sqlInsertCart = "insert into carts (id) values (?)";
-        String sqlInsertItems = "insert into cart_items (id, product_id, description, qty) values (?, ?, ?, ?)";
+        String sqlInsertCart = "insert into carts (id) values (?) ON CONFLICT DO NOTHING ";
+        String sqlInsertItems = "insert into cart_items (id, product_id, description, qty) values (?, ?, ?, ?) ON CONFLICT (id) DO UPDATE SET product_id = excluded.product_id, description = excluded.description, qty = excluded.qty";
         String sqlDeleteOldItems = "delete from cart_items where id in (?)";
         String sqlInsertEvents = "insert into events (id, aggregate_id, version, event_type, payload) values (?, ?, ?, ?, to_json(?::json))";
 

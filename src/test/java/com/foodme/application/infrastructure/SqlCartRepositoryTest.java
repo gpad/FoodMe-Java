@@ -71,4 +71,17 @@ public class SqlCartRepositoryTest {
         assertThat(cart.getNextAggregateVersion(), equalTo(loadedCart.getNextAggregateVersion()));
         assertThat(cart.getId(), equalTo(loadedCart.getId()));
     }
+
+    @Test
+    public void saveUpdatedCart() throws SQLException {
+        Cart cart = Cart.createEmptyFor(user);
+        cart.addProduct(shampoo, 2);
+
+        cartRepository.save(cart);
+        cart.addProduct(soap, 1);
+        cartRepository.save(cart);
+
+        Cart loadedCart = cartRepository.load(cart.getId());
+        assertThat(loadedCart.getItems(), equalTo(cart.getItems()));
+    }
 }
