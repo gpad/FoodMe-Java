@@ -22,7 +22,7 @@ public class Aggregate<TAggregateId> {
         this.id = id;
     }
 
-    protected void Emit(DomainEvent<TAggregateId> event)
+    protected void emit(DomainEvent<TAggregateId> event)
     {
         this.uncommittedEvents.add(event);
         apply(event);

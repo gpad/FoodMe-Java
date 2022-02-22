@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.Collection;
 
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
 public class IntegrationTests {
@@ -31,6 +32,8 @@ public class IntegrationTests {
     private IProductsReadModel productsReadModel;
     private IOrderReadModel orderReadModel;
     private DomainEventPubSub domainEventPubSub;
+    private WarehouseUpdater warehouseUpdater;
+    private FakeWarehouseClient fakeWarehouseClient;
 
     @BeforeClass
     public static void migrateDb() {
@@ -47,6 +50,9 @@ public class IntegrationTests {
         orderRepository = new SqlOrderRepository(connectionInfo, domainEventPubSub);
         productsReadModel = new InMemoryProductsReadModel(domainEventPubSub);
         orderReadModel = new InMemoryOrderReadModel();
+        fakeWarehouseClient = new FakeWarehouseClient();
+        warehouseUpdater = new WarehouseUpdater(fakeWarehouseClient);
+        warehouseUpdater.start(domainEventPubSub);
     }
 
     @After
@@ -103,6 +109,19 @@ public class IntegrationTests {
 
         Collection<com.foodme.readmodel.Order> orders = orderReadModel.getAllFor(cart.getShopId());
         assertThat(orders, equalTo(Arrays.asList(readModelOrderFrom(order))));
+    }
+
+    @Test
+    public void checkOutCartSubmitAnOrderToWarehouse() throws SQLException {
+        Cart cart = Cart.createEmptyFor(user);
+        cart.addProduct(shampoo, 2);
+        cart.addProduct(soap, 1);
+        cartRepository.save(cart);
+
+        Order order = Order.checkout(cart);
+        orderRepository.save(order);
+
+        assertThat(fakeWarehouseClient.wasCalled(), is(true));
     }
 
 }

@@ -36,7 +36,7 @@ public class Cart extends Aggregate<CartId> {
 
     public UUID addProduct(Product product, int quantity) {
         UUID itemId = UUID.randomUUID();
-        Emit(ProductAdded.from(this, itemId, product, quantity));
+        emit(ProductAdded.from(this, itemId, product, quantity));
         return itemId;
     }
 

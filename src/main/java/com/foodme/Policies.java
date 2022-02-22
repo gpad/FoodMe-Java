@@ -1,5 +1,6 @@
 package com.foodme;
 
+import com.foodme.core.IDomainEventSubscriber;
 import com.foodme.core.Policy;
 
 import java.util.ArrayList;
@@ -16,8 +17,8 @@ public class Policies {
         this.policies.addAll(policies);
     }
 
-    public void start() {
-        this.policies.forEach(policy -> policy.start());
+    public void start(IDomainEventSubscriber subscriber) {
+        this.policies.forEach(policy -> policy.start(subscriber));
     }
 }
 

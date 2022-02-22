@@ -6,6 +6,7 @@ import com.foodme.application.infrastructure.ConnectionInfo;
 import com.foodme.application.infrastructure.DomainEventPubSub;
 import com.foodme.application.infrastructure.SqlCartRepository;
 import com.foodme.core.Cart;
+import com.foodme.core.IDomainEventSubscriber;
 import com.foodme.core.WarehouseUpdater;
 import org.flywaydb.core.Flyway;
 
@@ -19,7 +20,7 @@ public class Main {
         System.out.println("Hello World!");
         migrateDb(CONNECTION_INFO);
         DomainEventPubSub domainEventPubSub = new DomainEventPubSub();
-        Policies policies = startupPolicies();
+        Policies policies = startupPolicies(domainEventPubSub);
         if (args.length == 1 && args[0].equals("createCart")) {
             ICartService cartService = createCartService(CONNECTION_INFO, domainEventPubSub);
             Cart cart = cartService.create();
@@ -63,10 +64,10 @@ public class Main {
         return new ConsoleCartService(cartRepository);
     }
 
-    private static Policies startupPolicies() {
+    private static Policies startupPolicies(IDomainEventSubscriber subscriber) {
         Policies policies = new Policies();
-        policies.add(Arrays.asList(new WarehouseUpdater()));
-        policies.start();
+        policies.add(Arrays.asList(new WarehouseUpdater(new HttpWarehouseClient())));
+        policies.start(subscriber);
         return policies;
     }
 
