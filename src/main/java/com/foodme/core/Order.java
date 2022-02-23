@@ -5,6 +5,9 @@ public class Order {
         throw new UnsupportedOperationException();
     }
 
+    public CartId checkoutFromCartId() {
+        return null;
+    }
 }
 
 

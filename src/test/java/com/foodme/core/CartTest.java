@@ -34,6 +34,7 @@ public class CartTest {
 
         assertThat(cart.getUncommittedEvents(), equalTo(
                 Arrays.asList(
+                        CartCreated.from(cart.getId(), cart.getShopId()),
                         ProductAdded.from(cart, itemId1, shampoo, 1),
                         ProductAdded.from(cart, itemId2, soap, 1))));
     }

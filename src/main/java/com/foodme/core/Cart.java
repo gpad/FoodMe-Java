@@ -12,6 +12,7 @@ public class Cart extends Aggregate<CartId> {
     protected Cart(CartId id, ShopId shopId) {
         this.setId(id);
         this.shopId = shopId;
+        emit(CartCreated.from(id, shopId));
     }
 
     protected Cart(Collection<DomainEvent<CartId>> events) {
@@ -47,6 +48,11 @@ public class Cart extends Aggregate<CartId> {
                         productAdded.getProductId(),
                         "",
                         productAdded.getQuantity()));
+    }
+
+    public void when(CartCreated cartCreated) {
+        this.setId(cartCreated.getAggregateId());
+        this.shopId = cartCreated.getShopId();
     }
 
 }

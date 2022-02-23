@@ -18,8 +18,7 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
 
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 
 public class IntegrationTests {
@@ -32,8 +31,10 @@ public class IntegrationTests {
     private IProductsReadModel productsReadModel;
     private IOrderReadModel orderReadModel;
     private DomainEventPubSub domainEventPubSub;
+    private DomainCommandPubSub domaincommandPubSub;
     private WarehouseUpdater warehouseUpdater;
     private FakeWarehouseClient fakeWarehouseClient;
+    private CartCommandHandler cartCommandHandler;
 
     @BeforeClass
     public static void migrateDb() {
@@ -53,6 +54,9 @@ public class IntegrationTests {
         fakeWarehouseClient = new FakeWarehouseClient();
         warehouseUpdater = new WarehouseUpdater(fakeWarehouseClient);
         warehouseUpdater.start(domainEventPubSub);
+        domaincommandPubSub = new DomainCommandPubSub();
+        cartCommandHandler = new CartCommandHandler(cartRepository);
+        cartCommandHandler.subscribe(domaincommandPubSub);
     }
 
     @After
@@ -124,6 +128,17 @@ public class IntegrationTests {
         assertThat(fakeWarehouseClient.wasCalled(), is(true));
     }
 
+    @Test
+    public void checkoutViaCommand() throws SQLException {
+        Cart cart = Cart.createEmptyFor(user);
+        cartRepository.save(cart);
+        AddItemToCart cmd = new AddItemToCart(cart.getId(), shampoo, 2);
+
+        domaincommandPubSub.execute(cmd);
+
+        Cart cartFromDb = cartRepository.load(cart.getId());
+        assertThat(cartFromDb.getItems(), hasSize(1));
+    }
 }
 
 
