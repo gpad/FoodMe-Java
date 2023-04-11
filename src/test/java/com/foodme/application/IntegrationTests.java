@@ -21,6 +21,7 @@ import java.util.Collection;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 
+
 public class IntegrationTests {
     private static ConnectionInfo connectionInfo = Main.CONNECTION_INFO;
     private User user;
@@ -129,7 +130,7 @@ public class IntegrationTests {
     }
 
     @Test
-    public void checkoutViaCommand() throws SQLException {
+    public void addItemViaCommand() throws SQLException {
         Cart cart = Cart.createEmptyFor(user);
         cartRepository.save(cart);
         AddItemToCart cmd = new AddItemToCart(cart.getId(), shampoo, 2);
